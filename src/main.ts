@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import * as core from "@actions/core";
 import { Configuration, OpenAIApi } from "openai";
-import { Octokit } from "@octokit/rest";
+import { Octokit } from "@octokit/action";
 import parseDiff, { Chunk, File } from "parse-diff";
 import minimatch from "minimatch";
 
