@@ -159,6 +159,7 @@ function getAIResponse(prompt) {
             presence_penalty: 0,
         };
         try {
+            console.log('Sending prompt to chatgpt');
             const response = yield openai.chat.completions.create(Object.assign(Object.assign({}, queryConfig), { messages: [
                     {
                         role: "system",
@@ -166,6 +167,7 @@ function getAIResponse(prompt) {
                     },
                 ] }));
             const res = ((_b = (_a = response.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.trim()) || "[]";
+            console.log('chat gpt response', res);
             return JSON.parse(res);
         }
         catch (error) {
@@ -194,6 +196,7 @@ function createReviewComment(owner, repo, pull_number, comments) {
             pull_number,
             comments,
             event: "COMMENT",
+            headers: { "Retry-After": 30 }
         });
     });
 }

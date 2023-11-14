@@ -142,6 +142,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
   };
 
   try {
+    console.log('Sending prompt to chatgpt');
     const response = await openai.chat.completions.create({
       ...queryConfig,
       messages: [
@@ -153,6 +154,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
     });
 
     const res = response.choices[0].message?.content?.trim() || "[]";
+    console.log('chat gpt response', res);
     return JSON.parse(res);
   } catch (error) {
     console.error("Error:", error);
@@ -192,6 +194,7 @@ async function createReviewComment(
     pull_number,
     comments,
     event: "COMMENT",
+    headers: { "Retry-After": 30 }
   });
 }
 
