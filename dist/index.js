@@ -188,16 +188,26 @@ function createComment(file, chunk, aiResponses) {
         };
     });
 }
+function sendComment(reviewParams, index) {
+    return __awaiter(this, void 0, void 0, function* () {
+        setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+            yield octokit.pulls.createReview(reviewParams);
+        }), 1000 * index);
+    });
+}
 function createReviewComment(owner, repo, pull_number, comments) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield octokit.pulls.createReview({
-            owner,
-            repo,
-            pull_number,
-            comments,
-            event: "COMMENT",
-            headers: { "Retry-After": 30 }
-        });
+        // enviando los comentarios de 10 en 10 para evitar el limit_request
+        for (let index = 0; index < (comments.length / 10); index++) {
+            const commentsToSent = comments.slice(index * 10, (index + 1) * 10);
+            sendComment({
+                owner,
+                repo,
+                pull_number,
+                commentsToSent,
+                event: "COMMENT"
+            }, index);
+        }
     });
 }
 function main() {
