@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import * as core from "@actions/core";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import { Octokit } from "@octokit/action";
 import parseDiff, { Chunk, File } from "parse-diff";
 import minimatch from "minimatch";
@@ -11,11 +11,11 @@ const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
-const configuration = new Configuration({
+
+
+const openai = new OpenAI({
   apiKey: OPENAI_API_KEY,
 });
-
-const openai = new OpenAIApi(configuration);
 
 interface PRDetails {
   owner: string;
@@ -142,7 +142,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
   };
 
   try {
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       ...queryConfig,
       messages: [
         {
@@ -152,7 +152,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
       ],
     });
 
-    const res = response.data.choices[0].message?.content?.trim() || "[]";
+    const res = response.choices[0].message?.content?.trim() || "[]";
     return JSON.parse(res);
   } catch (error) {
     console.error("Error:", error);
