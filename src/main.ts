@@ -184,18 +184,6 @@ function createComment(
   });
 }
 
-async function sendComment(reviewParams: any, index: number) {
-  return new Promise((resolve, reject) => {
-    return octokit.pulls.createReview(reviewParams);
-  })
-}
-
-const forEachSeries = async (iterable: any[], action: any) => {
-  for(let x of iterable) {
-    await action(x)
-  }
-}
-
 async function createReviewComment(
   owner: string,
   repo: string,
@@ -203,28 +191,16 @@ async function createReviewComment(
   comments: Array<{ body: string; path: string; line: number }>
 ): Promise<void> {
   const splitNumber = 25;
-  let paramsArr = [];
-  for (let index = 0; index < Math.round(comments.length/splitNumber); index++) {
+  const maxCommentsAllowed = 50;
+  let commentsToSent = comments.slice(0, maxCommentsAllowed)
+  const createReviewResponse = await octokit.pulls.createReview({ owner, repo, pull_number, comments: commentsToSent, event: 'COMMENT' });
+  console.log('createReviewResponse', createReviewResponse)
+  for (let index = 2; index < Math.round(comments.length/splitNumber); index++) {
     let commentsToSent = comments.slice(index*splitNumber, (index+1)*splitNumber)
     if (commentsToSent.length) {
-      // console.log('comments to send', commentsToSent.length,commentsToSent);
-      paramsArr.push({
-        owner,
-        repo,
-        pull_number,
-        comments: commentsToSent,
-        event: 'COMMENT'
-      });
-      // await sendComment({
-      //   owner,
-      //   repo,
-      //   pull_number,
-      //   comments: commentsToSent,
-      //   event: 'COMMENT'
-      // }, index);
+      console.log('comments to send', commentsToSent.length,commentsToSent);
     }
   }
-  forEachSeries(paramsArr, octokit.pulls.createReview);
 }
 
 async function main() {
@@ -265,273 +241,21 @@ async function main() {
     return;
   }
 
-  // const parsedDiff = parseDiff(diff);
+  const parsedDiff = parseDiff(diff);
 
-  // const excludePatterns = core
-  //   .getInput("exclude")
-  //   .split(",")
-  //   .map((s) => s.trim());
+  const excludePatterns = core
+    .getInput("exclude")
+    .split(",")
+    .map((s) => s.trim());
 
-  // const filteredDiff = parsedDiff.filter((file) => {
-  //   return !excludePatterns.some((pattern) =>
-  //     minimatch(file.to ?? "", pattern)
-  //   );
-  // });
+  const filteredDiff = parsedDiff.filter((file) => {
+    return !excludePatterns.some((pattern) =>
+      minimatch(file.to ?? "", pattern)
+    );
+  });
 
-  // const comments = await analyzeCode(filteredDiff, prDetails);
-  const comments = 
-  [
-    {
-        "body": "The name of the workflow should be more descriptive and meaningful. Consider changing it to something like 'AI Code Review Workflow'.",
-        "path": ".github/workflows/main.yml",
-        "line": 1
-    },
-    {
-        "body": "The 'pull_request' event type is already included by default, so there is no need to explicitly specify it.",
-        "path": ".github/workflows/main.yml",
-        "line": 4
-    },
-    {
-        "body": "The 'contents: read' permission is not necessary for this workflow. Please remove it.",
-        "path": ".github/workflows/main.yml",
-        "line": 8
-    },
-    {
-        "body": "The 'pull-requests: write' permission is not necessary for this workflow. Please remove it.",
-        "path": ".github/workflows/main.yml",
-        "line": 10
-    },
-    {
-        "body": "Consider giving the job a more descriptive name, such as 'AI Code Review Job'.",
-        "path": ".github/workflows/main.yml",
-        "line": 12
-    },
-    {
-        "body": "The first echo statement is not necessary and can be removed.",
-        "path": ".github/workflows/main.yml",
-        "line": 15
-    },
-    {
-        "body": "The second echo statement is not necessary and can be removed.",
-        "path": ".github/workflows/main.yml",
-        "line": 16
-    },
-    {
-        "body": "The third echo statement is not necessary and can be removed.",
-        "path": ".github/workflows/main.yml",
-        "line": 17
-    },
-    {
-        "body": "Consider adding a more descriptive name to the 'Check out repository code' step, such as 'Checkout Repository Code'.",
-        "path": ".github/workflows/main.yml",
-        "line": 19
-    },
-    {
-        "body": "The fourth echo statement is not necessary and can be removed.",
-        "path": ".github/workflows/main.yml",
-        "line": 21
-    },
-    {
-        "body": "Consider adding a more descriptive name to the 'List files in the repository' step, such as 'List Repository Files'.",
-        "path": ".github/workflows/main.yml",
-        "line": 23
-    },
-    {
-        "body": "The fifth echo statement is not necessary and can be removed.",
-        "path": ".github/workflows/main.yml",
-        "line": 26
-    },
-    {
-        "body": "The 'ai-codereviewer' action should have a more descriptive name. Consider changing it to something like 'AI Code Review Action'.",
-        "path": ".github/workflows/main.yml",
-        "line": 27
-    },
-    {
-        "body": "The 'OPENAI_API_KEY' secret should be encrypted and stored in the repository settings. Please remove it from the workflow file.",
-        "path": ".github/workflows/main.yml",
-        "line": 29
-    },
-    {
-        "body": "The 'OPENAI_API_MODEL' input should have a more descriptive name. Consider changing it to something like 'AI Model Version'.",
-        "path": ".github/workflows/main.yml",
-        "line": 30
-    },
-    {
-        "body": "There is no need to exclude '*.txt' files from the AI Code Reviewer. Please remove it from the 'exclude' pattern.",
-        "path": ".github/workflows/main.yml",
-        "line": 32
-    },
-    {
-        "body": "Consider removing the line `*.zip` from the .gitignore file. It is generally not recommended to include zip files in version control as they can be large and easily recreated if needed.",
-        "path": ".gitignore",
-        "line": 52
-    },
-    {
-        "body": "Consider removing the line `infrastructure/.terraform/*` from the .gitignore file. It seems to be a duplicate entry as there is already a more specific entry for `events_integration/infra/.terraform/*`. Keeping only the more specific entry should be sufficient.",
-        "path": ".gitignore",
-        "line": 54
-    },
-    {
-        "body": "The `terraform` block is missing a closing brace.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 1
-    },
-    {
-        "body": "The `required_version` attribute is missing a value.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 2
-    },
-    {
-        "body": "The `required_providers` block is missing a closing brace.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 5
-    },
-    {
-        "body": "The `source` attribute is missing a value.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 6
-    },
-    {
-        "body": "The `version` attribute is missing a value.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 7
-    },
-    {
-        "body": "The `backend` block is missing a closing brace.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 11
-    },
-    {
-        "body": "The `acl` attribute is missing a value.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 12
-    },
-    {
-        "body": "The `region` attribute is missing a value.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 13
-    },
-    {
-        "body": "The `encrypt` attribute is missing a value.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 14
-    },
-    {
-        "body": "The `session_name` attribute is missing a value.",
-        "path": "events_integration/infra/backend.tf",
-        "line": 15
-    },
-    {
-        "body": "The variable `bucket` seems to be hardcoded. Consider using a variable or parameter to make it more flexible.",
-        "path": "events_integration/infra/backends/prod.tfbackend",
-        "line": 1
-    },
-    {
-        "body": "The variable `key` seems to be hardcoded. Consider using a variable or parameter to make it more flexible.",
-        "path": "events_integration/infra/backends/prod.tfbackend",
-        "line": 2
-    },
-    {
-        "body": "The variable 'bucket' seems to be hardcoded. Consider using a variable or parameter to make it more flexible.",
-        "path": "events_integration/infra/backends/stg.tfbackend",
-        "line": 1
-    },
-    {
-        "body": "The variable 'key' also seems to be hardcoded. Consider using a variable or parameter to make it more flexible.",
-        "path": "events_integration/infra/backends/stg.tfbackend",
-        "line": 2
-    },
-    {
-        "body": "The pull request title is misspelled. It should be 'Feature/test' instead of 'Fature/test'.",
-        "path": "events_integration/infra/main.tf",
-        "line": 1
-    },
-    {
-        "body": "The 'default_tags' block seems to be missing a closing bracket.",
-        "path": "events_integration/infra/main.tf",
-        "line": 4
-    },
-    {
-        "body": "The 'source' attribute in module 'sqs' should have a relative path starting with './'.",
-        "path": "events_integration/infra/main.tf",
-        "line": 25
-    },
-    {
-        "body": "The 'sqs_arn_gamification_level_start' attribute in module 'lambda' seems to be misspelled. It should be 'sqs_arn_gamification_level_start' instead of 'sqs_arn_gamification_level_start'.",
-        "path": "events_integration/infra/main.tf",
-        "line": 39
-    },
-    {
-        "body": "The 'sqs_arn_gamification_node_redeemreward' attribute in module 'lambda' seems to be misspelled. It should be 'sqs_arn_gamification_node_redeemReward' instead of 'sqs_arn_gamification_node_redeemreward'.",
-        "path": "events_integration/infra/main.tf",
-        "line": 43
-    },
-    {
-        "body": "The 'events_rol' attribute in module 'lambda' seems to be misspelled. It should be 'events_rol' instead of 'events_rol'.",
-        "path": "events_integration/infra/main.tf",
-        "line": 44
-    },
-    {
-        "body": "Consider providing a more descriptive name for the `aws_iam_role` data block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 2
-    },
-    {
-        "body": "Check the spelling of the `var.events_rol` variable. It seems to be missing an 'e' at the end.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 3
-    },
-    {
-        "body": "Consider providing a more descriptive name for the `archive_file` data block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 7
-    },
-    {
-        "body": "Consider using a more specific path for the `source_file` attribute in the `archive_file` data block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 9
-    },
-    {
-        "body": "Consider using a more specific output path for the `archive_file` data block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 10
-    },
-    {
-        "body": "Consider providing a more descriptive name for the `aws_lambda_function` resource block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 14
-    },
-    {
-        "body": "Consider providing a more descriptive name for the `function_name` attribute in the `aws_lambda_function` resource block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 16
-    },
-    {
-        "body": "Consider using a more specific default value for the `timeout` attribute in the `aws_lambda_function` resource block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 18
-    },
-    {
-        "body": "Consider using a more specific default value for the `memory_size` attribute in the `aws_lambda_function` resource block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 19
-    },
-    {
-        "body": "Consider using a more specific default value for the `runtime` attribute in the `aws_lambda_function` resource block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 20
-    },
-    {
-        "body": "Consider using a more specific value for the `filename` attribute in the `aws_lambda_function` resource block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 21
-    },
-    {
-        "body": "Consider using a more specific value for the `handler` attribute in the `aws_lambda_function` resource block.",
-        "path": "events_integration/infra/modules/lambda/main.tf",
-        "line": 22
-    }
-];
+  const comments = await analyzeCode(filteredDiff, prDetails);
+  
   if (comments.length > 0) {
     await createReviewComment(
       prDetails.owner,
