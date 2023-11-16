@@ -202,12 +202,12 @@ async function createReviewComment(
   pull_number: number,
   comments: Array<{ body: string; path: string; line: number }>
 ): Promise<void> {
-  const splitNumber = 50;
+  const splitNumber = 25;
   let paramsArr = [];
   for (let index = 0; index < Math.round(comments.length/splitNumber); index++) {
     let commentsToSent = comments.slice(index*splitNumber, (index+1)*splitNumber)
     if (commentsToSent.length) {
-      console.log('comments to send', commentsToSent.length,commentsToSent);
+      // console.log('comments to send', commentsToSent.length,commentsToSent);
       paramsArr.push({
         owner,
         repo,
