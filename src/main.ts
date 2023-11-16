@@ -195,15 +195,18 @@ async function createReviewComment(
   comments: Array<{ body: string; path: string; line: number }>
 ): Promise<void> {
   // enviando los comentarios de 10 en 10 para evitar el limit_request
-  for (let index = 0; index < (comments.length/10); index++) {
-    const commentsToSent = comments.slice(index*10, (index+1)*10)
-    sendComment({
-      owner,
-      repo,
-      pull_number,
-      commentsToSent,
-      event: "COMMENT"
-    }, index)
+  for (let index = 0; index < (comments.length/20); index++) {
+    const commentsToSent = comments.slice(index*20, (index+1)*20)
+    if (commentsToSent.length) {
+      console.log('comments to send', commentsToSent);
+      sendComment({
+        owner,
+        repo,
+        pull_number,
+        commentsToSent,
+        event: "COMMENT"
+      }, index)
+    }
   }
   
 }
@@ -214,7 +217,7 @@ async function main() {
   const eventData = JSON.parse(
     readFileSync(process.env.GITHUB_EVENT_PATH ?? "", "utf8")
   );
-
+  console.log('Action', eventData.action);
   if (eventData.action === "opened") {
     diff = await getDiff(
       prDetails.owner,
