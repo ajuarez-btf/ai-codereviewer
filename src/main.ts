@@ -185,10 +185,16 @@ function createComment(
 }
 
 async function sendComment(reviewParams: any, index: number) {
-  return setTimeout(async () => {
-      return octokit.pulls.createReview(reviewParams);
-  }, 1000*index);
-} 
+  return new Promise((resolve, reject) => {
+    return octokit.pulls.createReview(reviewParams);
+  })
+}
+
+const forEachSeries = async (iterable: any[], action: any) => {
+  for(let x of iterable) {
+    await action(x)
+  }
+}
 
 async function createReviewComment(
   owner: string,
@@ -197,18 +203,18 @@ async function createReviewComment(
   comments: Array<{ body: string; path: string; line: number }>
 ): Promise<void> {
   const splitNumber = 50;
-  let promiseArr = [];
+  let paramsArr = [];
   for (let index = 0; index < Math.round(comments.length/splitNumber); index++) {
     let commentsToSent = comments.slice(index*splitNumber, (index+1)*splitNumber)
     if (commentsToSent.length) {
       console.log('comments to send', commentsToSent.length,commentsToSent);
-      promiseArr.push(octokit.pulls.createReview({
+      paramsArr.push({
         owner,
         repo,
         pull_number,
         comments: commentsToSent,
         event: 'COMMENT'
-      }));
+      });
       // await sendComment({
       //   owner,
       //   repo,
@@ -218,8 +224,7 @@ async function createReviewComment(
       // }, index);
     }
   }
-  const promisesResponse = await Promise.allSettled(promiseArr);
-  promisesResponse.forEach((result) => console.log(result.status))
+  forEachSeries(paramsArr, octokit.pulls.createReview);
 }
 
 async function main() {

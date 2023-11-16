@@ -190,26 +190,31 @@ function createComment(file, chunk, aiResponses) {
 }
 function sendComment(reviewParams, index) {
     return __awaiter(this, void 0, void 0, function* () {
-        return setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+        return new Promise((resolve, reject) => {
             return octokit.pulls.createReview(reviewParams);
-        }), 1000 * index);
+        });
     });
 }
+const forEachSeries = (iterable, action) => __awaiter(void 0, void 0, void 0, function* () {
+    for (let x of iterable) {
+        yield action(x);
+    }
+});
 function createReviewComment(owner, repo, pull_number, comments) {
     return __awaiter(this, void 0, void 0, function* () {
         const splitNumber = 50;
-        let promiseArr = [];
+        let paramsArr = [];
         for (let index = 0; index < Math.round(comments.length / splitNumber); index++) {
             let commentsToSent = comments.slice(index * splitNumber, (index + 1) * splitNumber);
             if (commentsToSent.length) {
                 console.log('comments to send', commentsToSent.length, commentsToSent);
-                promiseArr.push(octokit.pulls.createReview({
+                paramsArr.push({
                     owner,
                     repo,
                     pull_number,
                     comments: commentsToSent,
                     event: 'COMMENT'
-                }));
+                });
                 // await sendComment({
                 //   owner,
                 //   repo,
@@ -219,8 +224,7 @@ function createReviewComment(owner, repo, pull_number, comments) {
                 // }, index);
             }
         }
-        const promisesResponse = yield Promise.allSettled(promiseArr);
-        promisesResponse.forEach((result) => console.log(result.status));
+        forEachSeries(paramsArr, octokit.pulls.createReview);
     });
 }
 function main() {
