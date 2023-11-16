@@ -198,15 +198,18 @@ function sendComment(reviewParams, index) {
 function createReviewComment(owner, repo, pull_number, comments) {
     return __awaiter(this, void 0, void 0, function* () {
         // enviando los comentarios de 10 en 10 para evitar el limit_request
-        for (let index = 0; index < (comments.length / 10); index++) {
-            const commentsToSent = comments.slice(index * 10, (index + 1) * 10);
-            sendComment({
-                owner,
-                repo,
-                pull_number,
-                commentsToSent,
-                event: "COMMENT"
-            }, index);
+        for (let index = 0; index < (comments.length / 20); index++) {
+            const commentsToSent = comments.slice(index * 20, (index + 1) * 20);
+            if (commentsToSent.length) {
+                console.log('comments to send', commentsToSent);
+                sendComment({
+                    owner,
+                    repo,
+                    pull_number,
+                    commentsToSent,
+                    event: "COMMENT"
+                }, index);
+            }
         }
     });
 }
@@ -216,6 +219,7 @@ function main() {
         const prDetails = yield getPRDetails();
         let diff;
         const eventData = JSON.parse((0, fs_1.readFileSync)((_a = process.env.GITHUB_EVENT_PATH) !== null && _a !== void 0 ? _a : "", "utf8"));
+        console.log('Action', eventData.action);
         if (eventData.action === "opened") {
             diff = yield getDiff(prDetails.owner, prDetails.repo, prDetails.pull_number);
         }
