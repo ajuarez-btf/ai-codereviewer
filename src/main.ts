@@ -184,22 +184,30 @@ function createComment(
   });
 }
 
+async function sendComment(reviewParams: any, index: number) {
+  return setTimeout(async () => {
+      return octokit.pulls.createReview(reviewParams);
+  }, 1000*index);
+} 
+
 async function createReviewComment(
   owner: string,
   repo: string,
   pull_number: number,
   comments: Array<{ body: string; path: string; line: number }>
 ): Promise<void> {
-  // enviando los comentarios de 10 en 10 para evitar el limit_request
-  const maxCommentsAllowed = 50;
-  let commentsToSent = comments.slice(0, maxCommentsAllowed)
-  const createReviewResponse = await octokit.pulls.createReview({ owner, repo, pull_number, comments: commentsToSent, event: 'COMMENT' });
-  console.log('createReviewResponse', createReviewResponse)
-  const splitNumber = 20;
+  const splitNumber = 50;
   for (let index = 0; index < Math.round(comments.length/splitNumber); index++) {
     let commentsToSent = comments.slice(index*splitNumber, (index+1)*splitNumber)
     if (commentsToSent.length) {
       console.log('comments to send', commentsToSent.length,commentsToSent);
+      await sendComment({
+        owner,
+        repo,
+        pull_number,
+        comments: commentsToSent,
+        event: 'COMMENT'
+      }, index);
     }
   }
   
