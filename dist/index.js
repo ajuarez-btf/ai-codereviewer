@@ -198,19 +198,29 @@ function sendComment(reviewParams, index) {
 function createReviewComment(owner, repo, pull_number, comments) {
     return __awaiter(this, void 0, void 0, function* () {
         const splitNumber = 50;
+        let promiseArr = [];
         for (let index = 0; index < Math.round(comments.length / splitNumber); index++) {
             let commentsToSent = comments.slice(index * splitNumber, (index + 1) * splitNumber);
             if (commentsToSent.length) {
                 console.log('comments to send', commentsToSent.length, commentsToSent);
-                yield sendComment({
+                promiseArr.push(octokit.pulls.createReview({
                     owner,
                     repo,
                     pull_number,
                     comments: commentsToSent,
                     event: 'COMMENT'
-                }, index);
+                }));
+                // await sendComment({
+                //   owner,
+                //   repo,
+                //   pull_number,
+                //   comments: commentsToSent,
+                //   event: 'COMMENT'
+                // }, index);
             }
         }
+        const promisesResponse = yield Promise.allSettled(promiseArr);
+        promisesResponse.forEach((result) => console.log(result.status));
     });
 }
 function main() {
