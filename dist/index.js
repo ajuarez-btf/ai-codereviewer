@@ -197,16 +197,7 @@ function createReviewComment(owner, repo, pull_number, comments) {
     return __awaiter(this, void 0, void 0, function* () {
         // enviando los comentarios de 10 en 10 para evitar el limit_request
         const splitNumber = 20;
-        let commentsToSent = comments.slice(0, splitNumber);
-        const resp = yield octokit.pulls.createReview({
-            owner,
-            repo,
-            pull_number,
-            comments: commentsToSent
-        });
-        console.log('Create Review comment response', resp);
-        const reviewId = resp.id;
-        for (let index = 1; index <= Math.round(comments.length / splitNumber); index++) {
+        for (let index = 0; index < Math.round(comments.length / splitNumber); index++) {
             let commentsToSent = comments.slice(index * splitNumber, (index + 1) * splitNumber);
             if (commentsToSent.length) {
                 console.log('comments to send', commentsToSent.length, commentsToSent);
@@ -214,11 +205,9 @@ function createReviewComment(owner, repo, pull_number, comments) {
                     owner,
                     repo,
                     pull_number,
-                    comments: commentsToSent
+                    comments: commentsToSent,
+                    event: 'COMMENT'
                 }, index);
-            }
-            if (index == Math.round(comments.length / splitNumber)) {
-                yield octokit.pulls.submitReview({ owner, repo, pull_number, review_id: reviewId, event: 'COMMENT' });
             }
         }
     });
