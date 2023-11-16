@@ -120,6 +120,8 @@ function createPrompt(file, chunk, prDetails) {
     return `Your task is to review pull requests. Instructions:
 - Provide the response in following JSON format:  [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]
 - Do not give positive comments or compliments.
+- NEVER suggest adding comments to the code.
+- NEVER suggest adding comments to explain the purpose of something into the code.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise return an empty array.
 - Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
@@ -186,28 +188,18 @@ function createComment(file, chunk, aiResponses) {
         };
     });
 }
-function sendComment(reviewParams, index) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-            return octokit.pulls.createReview(reviewParams);
-        }), 1000 * index);
-    });
-}
 function createReviewComment(owner, repo, pull_number, comments) {
     return __awaiter(this, void 0, void 0, function* () {
         // enviando los comentarios de 10 en 10 para evitar el limit_request
+        const maxCommentsAllowed = 50;
+        let commentsToSent = comments.slice(0, maxCommentsAllowed);
+        const createReviewResponse = yield octokit.pulls.createReview({ owner, repo, pull_number, comments: commentsToSent, event: 'COMMENT' });
+        console.log('createReviewResponse', createReviewResponse);
         const splitNumber = 20;
         for (let index = 0; index < Math.round(comments.length / splitNumber); index++) {
             let commentsToSent = comments.slice(index * splitNumber, (index + 1) * splitNumber);
             if (commentsToSent.length) {
                 console.log('comments to send', commentsToSent.length, commentsToSent);
-                sendComment({
-                    owner,
-                    repo,
-                    pull_number,
-                    comments: commentsToSent,
-                    event: 'COMMENT'
-                }, index);
             }
         }
     });
