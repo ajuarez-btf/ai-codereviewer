@@ -197,12 +197,12 @@ async function createReviewComment(
   // enviando los comentarios de 10 en 10 para evitar el limit_request
   const splitNumber = 20;
   let commentsToSent = comments.slice(0, splitNumber)
-  const resp: any = await sendComment({
+  const resp: any = await octokit.pulls.createReview({
     owner,
     repo,
     pull_number,
-    commentsToSent
-  }, 0)
+    comments: commentsToSent
+  })
   console.log('Create Review comment response', resp);
   const reviewId = resp.id;
 
@@ -214,7 +214,7 @@ async function createReviewComment(
         owner,
         repo,
         pull_number,
-        commentsToSent
+        comments: commentsToSent
       }, index);
     }
     if (index == Math.round(comments.length/splitNumber)) {
